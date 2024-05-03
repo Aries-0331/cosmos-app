@@ -3,29 +3,28 @@ import {
   AssetList,
   AssetListItemProps,
   Box,
+  Stack,
+  Text,
   Button,
   BasicModal,
   Combobox,
+  AssetWithdrawTokens,
 } from "@interchain-ui/react";
-import { assets } from "chain-registry";
-import { AssetList as AssetListType } from "@chain-registry/types";
+import {
+  Asset as AssetType,
+  AssetList as AssetListType,
+} from "@chain-registry/types";
 import { useStore } from "./store";
-
-function convertAssetList(assetList: AssetListType): AssetListItemProps[] {
-  return assetList.assets.map((asset) => ({
-    imgSrc: asset.logo_URIs?.png || asset.logo_URIs?.svg || "",
-    symbol: asset.symbol,
-    name: asset.name,
-    tokenAmount: "",
-    tokenAmountPrice: "",
-    chainName: assetList.chain_name,
-  }));
-}
 
 export function Asset() {
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isDepositModalOpen, setDepositModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetListItemProps>();
+  const [selectedAssetForDeposit, setSelectedAssetForDeposit] =
+    useState<AssetType>();
+
   const {
+    dataSource,
     assetList,
     setAssetList,
     selectedAssetList,
@@ -34,21 +33,25 @@ export function Asset() {
   } = useStore();
 
   useEffect(() => {
-    const assetList = assets.find(
-      ({ chain_name }) => chain_name === selectedChain
-    );
-    console.log(assetList);
-    if (assetList) {
-      setAssetList(assetList);
-      addAssetList({
-        assets: assetList.assets.slice(0, 5),
-        chain_name: selectedChain,
-      });
-    }
-  }, [addAssetList, selectedChain, setAssetList]);
+    const fetchAssetList = async () => {
+      try {
+        const assetList = await dataSource.getAssetList(selectedChain);
+        if (assetList) {
+          setAssetList(assetList);
+          addAssetList({
+            assets: assetList.assets.slice(0, 5),
+            chain_name: selectedChain,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch asset list", error);
+      }
+    };
+
+    fetchAssetList();
+  }, [addAssetList, selectedChain, setAssetList, dataSource]);
 
   const handleSubmit = () => {
-    // convert asset's data type from AssetListItemProps to Asset, then add selected asset to the list
     if (selectedAsset) {
       const asset = assetList.assets.find(
         (asset) => asset.symbol === selectedAsset.symbol
@@ -63,6 +66,24 @@ export function Asset() {
     setModalOpen(false);
   };
 
+  function convertAssetList(assetList: AssetListType): AssetListItemProps[] {
+    return assetList.assets.map((asset) => ({
+      imgSrc: asset.logo_URIs?.png || asset.logo_URIs?.svg || "",
+      symbol: asset.symbol,
+      name: asset.name,
+      tokenAmount: "10",
+      tokenAmountPrice: "9.9",
+      chainName: assetList.chain_name,
+      onDeposit: () => {
+        setSelectedAssetForDeposit(
+          assetList.assets.find((a) => a.symbol === asset.symbol)
+        );
+
+        setDepositModalOpen(true);
+      },
+    }));
+  }
+
   return (
     <Box
       display="flex"
@@ -72,30 +93,9 @@ export function Asset() {
     >
       <Box>
         <AssetList
-          // list={[
-          //   {
-          //     chainName: "Juno",
-          //     imgSrc:
-          //       "https://raw.githubusercontent.com/cosmos/chain-registry/master/terra/images/ust.png",
-          //     isOtherChains: false,
-          //     name: "Terra Classic",
-          //     symbol: "USTC",
-          //     tokenAmount: "89.66",
-          //     tokenAmountPrice: "10",
-          //   },
-          //   {
-          //     chainName: "Juno",
-          //     imgSrc:
-          //       "https://raw.githubusercontent.com/cosmos/chain-registry/master/teritori/images/utori.png",
-          //     isOtherChains: false,
-          //     name: "Teritori",
-          //     symbol: "TORI",
-          //     tokenAmount: "102.61",
-          //     tokenAmountPrice: "101.02",
-          //   },
-          // ]}
           list={convertAssetList(selectedAssetList)}
-          needChainSpace={false}
+          needChainSpace={true}
+          isOtherChains={true}
           titles={["Asset", "Balance"]}
         />
       </Box>
@@ -109,35 +109,75 @@ export function Asset() {
           Add Asset
         </Button>
       </Box>
-      <BasicModal
-        isOpen={isModalOpen}
-        title="Select Asset"
-        onClose={() => setModalOpen(false)}
-      >
-        <Box paddingBottom="$10">
-          <Combobox
-            label="Select Assets"
-            openOnFocus
-            styleProps={{
-              width: "350px",
-            }}
-            onInputChange={(value: string) => {
-              const asset = convertAssetList(assetList).find(
-                (asset) => asset.symbol === value
-              );
-              setSelectedAsset(asset);
-              console.log(selectedAsset);
-            }}
-          >
-            {convertAssetList(assetList).map((asset, index) => (
-              <Combobox.Item key={index}>{asset.symbol}</Combobox.Item>
-            ))}
-          </Combobox>
-        </Box>
-        <Box display="flex" justifyContent="end">
-          <Button onClick={handleSubmit}>Submit</Button>
-        </Box>
-      </BasicModal>
+      <Box>
+        <BasicModal
+          isOpen={isModalOpen}
+          title="Select Asset"
+          onClose={() => setModalOpen(false)}
+        >
+          <Box paddingBottom="$10">
+            <Combobox
+              label="Select Assets"
+              openOnFocus
+              styleProps={{
+                width: "350px",
+              }}
+              onInputChange={(value: string) => {
+                const asset = convertAssetList(assetList).find(
+                  (asset) => asset.symbol === value
+                );
+                if (asset) {
+                  setSelectedAsset(asset);
+                  console.log(selectedAsset);
+                } else {
+                  console.log("Asset not found");
+                }
+              }}
+            >
+              {convertAssetList(assetList).map((asset, index) => (
+                <Combobox.Item key={index}>{asset.symbol}</Combobox.Item>
+              ))}
+            </Combobox>
+          </Box>
+          <Box display="flex" justifyContent="end">
+            <Button onClick={handleSubmit}>Submit</Button>
+          </Box>
+        </BasicModal>
+      </Box>
+      <Box display="flex" flexDirection="row">
+        <BasicModal
+          isOpen={isDepositModalOpen}
+          title={`Deposit ${selectedAssetForDeposit?.name}`}
+          onClose={() => setDepositModalOpen(false)}
+        >
+          <Stack direction="vertical">
+            <AssetWithdrawTokens
+              amount=""
+              available={10}
+              fromAddress={
+                selectedAssetForDeposit?.address || "umee1lqsq...pv4axdaxk"
+              }
+              fromImgSrc={
+                selectedAssetForDeposit?.logo_URIs?.png ||
+                selectedAssetForDeposit?.logo_URIs?.svg ||
+                ""
+              }
+              fromName={selectedAssetForDeposit?.name || ""}
+              fromSymbol={selectedAssetForDeposit?.symbol || ""}
+              onAddressChange={function Va() {}}
+              onAddressConfirm={function Va() {}}
+              onCancel={function Va() {}}
+              onChange={function Va() {}}
+              onTransfer={function Va() {}}
+              priceDisplayAmount={0.5}
+              timeEstimateLabel="20 seconds"
+              toAddress="osmo1lqsq...pv48trj5k"
+              toImgSrc="https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.svg"
+              toName="Osmosis"
+            />
+          </Stack>
+        </BasicModal>
+      </Box>
     </Box>
   );
 }
