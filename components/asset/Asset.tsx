@@ -33,6 +33,7 @@ export function Asset() {
   } = useStore();
 
   useEffect(() => {
+    console.log(process.env.DATA_SOURCE);
     const fetchAssetList = async () => {
       try {
         const assetList = await dataSource.getAssetList(selectedChain);
@@ -134,9 +135,18 @@ export function Asset() {
                 }
               }}
             >
-              {convertAssetList(assetList).map((asset, index) => (
-                <Combobox.Item key={index}>{asset.symbol}</Combobox.Item>
-              ))}
+              {convertAssetList(assetList)
+                .filter(
+                  (asset) =>
+                    !selectedAssetList.assets.some(
+                      (selectedAsset) => selectedAsset.symbol === asset.symbol
+                    )
+                )
+                .map((asset) => (
+                  <Combobox.Item key={asset.symbol} textValue={asset.symbol}>
+                    {asset.symbol}
+                  </Combobox.Item>
+                ))}
             </Combobox>
           </Box>
           <Box display="flex" justifyContent="end">

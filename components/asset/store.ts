@@ -21,6 +21,7 @@ class ChainRegistryClientDataSource implements DataSource {
       chainNames: ["osmosis", "juno", "stargaze"],
     });
     try {
+      await client.fetchUrls();
       const assetList = client.getChainAssetList(name);
       const convertedAssetList = assetList.assets.map((asset) => {
         return {
@@ -58,7 +59,7 @@ type Store = {
 
 export const useStore = create<Store>((set) => ({
   dataSource:
-    process.env.DATA_SOURCE === "chain-registry"
+    process.env.DATA_SOURCE !== "chain-registry"
       ? new ChainRegistryClientDataSource()
       : new ChainRegistryDataSource(),
   assetList: { assets: [], chain_name: "" },
