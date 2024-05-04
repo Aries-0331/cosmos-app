@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { AssetList } from "@chain-registry/types";
+import { AssetListItemProps } from "@interchain-ui/react";
 import { assets } from "chain-registry";
 import { ChainRegistryClient } from "@chain-registry/client";
+import { CHAIN_NAME, DATA_SOURCE } from "@/config";
 
 interface DataSource {
   getAssetList: (name: string) => Promise<AssetList>;
@@ -50,21 +52,23 @@ class ChainRegistryClientDataSource implements DataSource {
 
 type Store = {
   dataSource: DataSource;
-  assetList: AssetList;
-  setAssetList: (assets: AssetList) => void;
-  selectedAssetList: AssetList;
-  addAssetList: (assets: AssetList) => void;
+  assetData: AssetList;
+  setAssetData: (assets: AssetList) => void;
   selectedChain: string;
+
+  assetList: AssetListItemProps[];
+  setAssetList: (assets: AssetListItemProps[]) => void;
 };
 
 export const useStore = create<Store>((set) => ({
   dataSource:
-    process.env.DATA_SOURCE !== "chain-registry"
+    DATA_SOURCE !== "chain-registry"
       ? new ChainRegistryClientDataSource()
       : new ChainRegistryDataSource(),
-  assetList: { assets: [], chain_name: "" },
+  assetData: { assets: [], chain_name: "" },
+  setAssetData: (assets) => set({ assetData: assets }),
+  selectedChain: CHAIN_NAME,
+
+  assetList: [],
   setAssetList: (assets) => set({ assetList: assets }),
-  selectedAssetList: { assets: [], chain_name: "" },
-  addAssetList: (assets) => set({ selectedAssetList: assets }),
-  selectedChain: "osmosis",
 }));

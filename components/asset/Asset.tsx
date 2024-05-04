@@ -3,191 +3,84 @@ import {
   AssetList,
   AssetListItemProps,
   Box,
-  Stack,
-  Text,
   Button,
   BasicModal,
-  Combobox,
-  AssetWithdrawTokens,
 } from "@interchain-ui/react";
-import {
-  Asset as AssetType,
-  AssetList as AssetListType,
-} from "@chain-registry/types";
+import { Asset as AssetType } from "@chain-registry/types";
 import { useStore } from "./store";
+import AddAsset from "./AddAsset";
+import Deposit from "./Deposit";
 
 export function Asset() {
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [isDepositModalOpen, setDepositModalOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<AssetListItemProps>();
-  const [selectedAssetForDeposit, setSelectedAssetForDeposit] =
-    useState<AssetType>();
-
-  const {
-    dataSource,
-    assetList,
-    setAssetList,
-    selectedAssetList,
-    addAssetList,
-    selectedChain,
-  } = useStore();
+  const { dataSource, assetData, setAssetData, selectedChain, setAssetList } =
+    useStore();
+  const [selectedAssetList, setSelectedAssetList] = useState<
+    AssetListItemProps[]
+  >([]);
+  const [selectedAssetForDeposit, setSelectedAssetForDeposit] = useState("");
+  const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
   useEffect(() => {
-    console.log(process.env.DATA_SOURCE);
     const fetchAssetList = async () => {
-      try {
-        const assetList = await dataSource.getAssetList(selectedChain);
-        if (assetList) {
-          setAssetList(assetList);
-          addAssetList({
-            assets: assetList.assets.slice(0, 5),
-            chain_name: selectedChain,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch asset list", error);
-      }
+      const rawAssetData = await dataSource.getAssetList(selectedChain);
+      console.log(rawAssetData);
+
+      setAssetData(rawAssetData);
+      const convertedAssetList = rawAssetData.assets.map((asset) => ({
+        imgSrc: asset.logo_URIs?.png || asset.logo_URIs?.svg || "",
+        symbol: asset.symbol,
+        name: asset.name,
+        tokenAmount: "10",
+        tokenAmountPrice: "9.9",
+        chainName: rawAssetData.chain_name,
+        onDeposit: () => {
+          setSelectedAssetForDeposit(asset.symbol);
+          setIsDepositModalOpen(true);
+        },
+      }));
+      setAssetList(convertedAssetList);
+      setSelectedAssetList(convertedAssetList.slice(0, 5));
     };
 
     fetchAssetList();
-  }, [addAssetList, selectedChain, setAssetList, dataSource]);
-
-  const handleSubmit = () => {
-    if (selectedAsset) {
-      const asset = assetList.assets.find(
-        (asset) => asset.symbol === selectedAsset.symbol
-      );
-      if (asset) {
-        addAssetList({
-          assets: [...selectedAssetList.assets, asset],
-          chain_name: selectedChain,
-        });
-      }
-    }
-    setModalOpen(false);
-  };
-
-  function convertAssetList(assetList: AssetListType): AssetListItemProps[] {
-    return assetList.assets.map((asset) => ({
-      imgSrc: asset.logo_URIs?.png || asset.logo_URIs?.svg || "",
-      symbol: asset.symbol,
-      name: asset.name,
-      tokenAmount: "10",
-      tokenAmountPrice: "9.9",
-      chainName: assetList.chain_name,
-      onDeposit: () => {
-        setSelectedAssetForDeposit(
-          assetList.assets.find((a) => a.symbol === asset.symbol)
-        );
-
-        setDepositModalOpen(true);
-      },
-    }));
-  }
+  }, [dataSource, selectedChain, setAssetData, setAssetList]);
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-around"
-      gap="$10"
-    >
+    <Box display="flex" flexDirection="column" gap="$12" paddingBottom="$16">
       <Box>
         <AssetList
-          list={convertAssetList(selectedAssetList)}
+          list={selectedAssetList}
           needChainSpace={true}
           isOtherChains={true}
           titles={["Asset", "Balance"]}
         />
       </Box>
-      <Box display="flex" justifyContent="end" paddingBottom="$10">
-        <Button
-          size="md"
-          onClick={() => setModalOpen(true)}
-          onHoverEnd={function Va() {}}
-          onHoverStart={function Va() {}}
-        >
-          Add Asset
-        </Button>
+      <Box display="flex" flexDirection="row" justifyContent="end">
+        <Button onClick={() => setIsAddAssetModalOpen(true)}>Add Asset</Button>
       </Box>
-      <Box>
-        <BasicModal
-          isOpen={isModalOpen}
-          title="Select Asset"
-          onClose={() => setModalOpen(false)}
-        >
-          <Box paddingBottom="$10">
-            <Combobox
-              label="Select Assets"
-              openOnFocus
-              styleProps={{
-                width: "350px",
-              }}
-              onInputChange={(value: string) => {
-                const asset = convertAssetList(assetList).find(
-                  (asset) => asset.symbol === value
-                );
-                if (asset) {
-                  setSelectedAsset(asset);
-                  console.log(selectedAsset);
-                } else {
-                  console.log("Asset not found");
-                }
-              }}
-            >
-              {convertAssetList(assetList)
-                .filter(
-                  (asset) =>
-                    !selectedAssetList.assets.some(
-                      (selectedAsset) => selectedAsset.symbol === asset.symbol
-                    )
-                )
-                .map((asset) => (
-                  <Combobox.Item key={asset.symbol} textValue={asset.symbol}>
-                    {asset.symbol}
-                  </Combobox.Item>
-                ))}
-            </Combobox>
-          </Box>
-          <Box display="flex" justifyContent="end">
-            <Button onClick={handleSubmit}>Submit</Button>
-          </Box>
-        </BasicModal>
-      </Box>
-      <Box display="flex" flexDirection="row">
-        <BasicModal
-          isOpen={isDepositModalOpen}
-          title={`Deposit ${selectedAssetForDeposit?.name}`}
-          onClose={() => setDepositModalOpen(false)}
-        >
-          <Stack direction="vertical">
-            <AssetWithdrawTokens
-              amount=""
-              available={10}
-              fromAddress={
-                selectedAssetForDeposit?.address || "umee1lqsq...pv4axdaxk"
-              }
-              fromImgSrc={
-                selectedAssetForDeposit?.logo_URIs?.png ||
-                selectedAssetForDeposit?.logo_URIs?.svg ||
-                ""
-              }
-              fromName={selectedAssetForDeposit?.name || ""}
-              fromSymbol={selectedAssetForDeposit?.symbol || ""}
-              onAddressChange={function Va() {}}
-              onAddressConfirm={function Va() {}}
-              onCancel={function Va() {}}
-              onChange={function Va() {}}
-              onTransfer={function Va() {}}
-              priceDisplayAmount={0.5}
-              timeEstimateLabel="20 seconds"
-              toAddress="osmo1lqsq...pv48trj5k"
-              toImgSrc="https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.svg"
-              toName="Osmosis"
-            />
-          </Stack>
-        </BasicModal>
-      </Box>
+      <BasicModal
+        title="Select Asset"
+        isOpen={isAddAssetModalOpen}
+        onClose={() => setIsAddAssetModalOpen(false)}
+        aria-label="Select Asset Modal"
+      >
+        <AddAsset
+          list={selectedAssetList}
+          onSetList={(item: AssetListItemProps) =>
+            setSelectedAssetList([...selectedAssetList, item])
+          }
+          onClose={() => setIsAddAssetModalOpen(false)}
+        />
+      </BasicModal>
+      <BasicModal
+        title={`Deposit ${selectedAssetForDeposit}`}
+        isOpen={isDepositModalOpen}
+        onClose={() => setIsDepositModalOpen(false)}
+        aria-label="Deposit Modal"
+      >
+        <Deposit symbol={selectedAssetForDeposit} />
+      </BasicModal>
     </Box>
   );
 }
