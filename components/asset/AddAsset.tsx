@@ -1,23 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
   Combobox,
   AssetListItemProps,
 } from "@interchain-ui/react";
-
-import { useState } from "react";
 import { useStore } from "./store";
 
-function AddAsset({
-  list,
-  onSetList,
-  onClose,
-}: {
+interface AddAssetProps {
   list: AssetListItemProps[];
   onSetList: (item: AssetListItemProps) => void;
   onClose: () => void;
-}) {
+}
+
+function AddAsset({ list, onSetList, onClose }: AddAssetProps) {
   const [selectedAsset, setSelectedAsset] = useState<AssetListItemProps>();
   const { assetList } = useStore();
 

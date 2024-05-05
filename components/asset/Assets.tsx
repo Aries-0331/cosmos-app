@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   AssetList,
   AssetListItemProps,
@@ -19,11 +19,18 @@ export function Assets() {
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
+  const onDeposit = useCallback((symbol: string) => {
+    setSelectedAssetForDeposit(symbol);
+    setIsDepositModalOpen(true);
+  }, []);
+  const onWithdraw = useCallback(() => {}, []);
+
   useEffect(() => {
     const fetchAssetList = async () => {
       const rawAssetData = await dataSource.getAssetList(selectedChain);
 
       setAssetData(rawAssetData);
+      // Convert the raw asset data to the format that AssetList component expects
       const convertedAssetList = rawAssetData.assets.map((asset) => ({
         imgSrc: asset.logo_URIs?.png || asset.logo_URIs?.svg || "",
         symbol: asset.symbol,
@@ -31,11 +38,8 @@ export function Assets() {
         tokenAmount: "10",
         tokenAmountPrice: "9.9",
         chainName: rawAssetData.chain_name,
-        onDeposit: () => {
-          setSelectedAssetForDeposit(asset.symbol);
-          setIsDepositModalOpen(true);
-        },
-        onWithdraw: () => {},
+        onDeposit: () => onDeposit(asset.symbol),
+        onWithdraw: onWithdraw,
       }));
       setAssetList(convertedAssetList);
       setSelectedAssetList(convertedAssetList.slice(0, 5));
