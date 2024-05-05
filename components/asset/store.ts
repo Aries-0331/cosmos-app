@@ -1,7 +1,7 @@
 import { create } from "zustand";
+import { assets } from "chain-registry";
 import { AssetList } from "@chain-registry/types";
 import { AssetListItemProps } from "@interchain-ui/react";
-import { assets } from "chain-registry";
 import { ChainRegistryClient } from "@chain-registry/client";
 import { CHAIN_NAME, DATA_SOURCE } from "@/config";
 
@@ -12,7 +12,6 @@ interface DataSource {
 class ChainRegistryDataSource implements DataSource {
   async getAssetList(name: string): Promise<AssetList> {
     const assetList = assets.find(({ chain_name }) => chain_name === name);
-    console.log(assetList);
     return assetList || { assets: [], chain_name: "" };
   }
 }
@@ -52,6 +51,7 @@ class ChainRegistryClientDataSource implements DataSource {
 
 type Store = {
   dataSource: DataSource;
+
   assetData: AssetList;
   setAssetData: (assets: AssetList) => void;
   selectedChain: string;
@@ -65,6 +65,7 @@ export const useStore = create<Store>((set) => ({
     DATA_SOURCE !== "chain-registry"
       ? new ChainRegistryClientDataSource()
       : new ChainRegistryDataSource(),
+
   assetData: { assets: [], chain_name: "" },
   setAssetData: (assets) => set({ assetData: assets }),
   selectedChain: CHAIN_NAME,

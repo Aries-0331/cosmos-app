@@ -1,6 +1,5 @@
 import React from "react";
 import { Stack, AssetWithdrawTokens } from "@interchain-ui/react";
-import { Asset } from "@chain-registry/types";
 import { useStore } from "./store";
 
 const Deposit = ({ symbol }: { symbol: string }) => {

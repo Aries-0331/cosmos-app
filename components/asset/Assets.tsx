@@ -6,14 +6,12 @@ import {
   Button,
   BasicModal,
 } from "@interchain-ui/react";
-import { Asset as AssetType } from "@chain-registry/types";
 import { useStore } from "./store";
 import AddAsset from "./AddAsset";
 import Deposit from "./Deposit";
 
-export function Asset() {
-  const { dataSource, assetData, setAssetData, selectedChain, setAssetList } =
-    useStore();
+export function Assets() {
+  const { dataSource, setAssetData, selectedChain, setAssetList } = useStore();
   const [selectedAssetList, setSelectedAssetList] = useState<
     AssetListItemProps[]
   >([]);
@@ -24,7 +22,6 @@ export function Asset() {
   useEffect(() => {
     const fetchAssetList = async () => {
       const rawAssetData = await dataSource.getAssetList(selectedChain);
-      console.log(rawAssetData);
 
       setAssetData(rawAssetData);
       const convertedAssetList = rawAssetData.assets.map((asset) => ({
@@ -38,6 +35,7 @@ export function Asset() {
           setSelectedAssetForDeposit(asset.symbol);
           setIsDepositModalOpen(true);
         },
+        onWithdraw: () => {},
       }));
       setAssetList(convertedAssetList);
       setSelectedAssetList(convertedAssetList.slice(0, 5));
@@ -47,13 +45,14 @@ export function Asset() {
   }, [dataSource, selectedChain, setAssetData, setAssetList]);
 
   return (
-    <Box display="flex" flexDirection="column" gap="$12" paddingBottom="$16">
+    <Box display="flex" flexDirection="column" gap="$6" py="$16">
       <Box>
         <AssetList
           list={selectedAssetList}
           needChainSpace={true}
           isOtherChains={true}
           titles={["Asset", "Balance"]}
+          attributes={{ paddingBottom: "$12" }}
         />
       </Box>
       <Box display="flex" flexDirection="row" justifyContent="end">
@@ -62,7 +61,6 @@ export function Asset() {
       <BasicModal
         title="Select Asset"
         isOpen={isAddAssetModalOpen}
-        onClose={() => setIsAddAssetModalOpen(false)}
         aria-label="Select Asset Modal"
       >
         <AddAsset

@@ -1,10 +1,11 @@
+// pages/asset.tsx
+import { Assets, Layout } from "@/components";
 import { Divider } from "@interchain-ui/react";
-import { Layout, Wallet } from "@/components";
 
-export default function Home() {
+export default function AssetPage() {
   return (
     <Layout>
-      <Wallet />
+      <Assets />
       <Divider mb="$16" />
     </Layout>
   );

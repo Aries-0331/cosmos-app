@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Box,
-  Stack,
   Button,
   Combobox,
   AssetListItemProps,
@@ -47,9 +46,7 @@ function AddAsset({
               (asset) => !list.some((item) => item.symbol === asset.symbol)
             )
             .map((asset) => (
-              <Combobox.Item key={asset.symbol} textValue={asset.symbol}>
-                {asset.symbol}
-              </Combobox.Item>
+              <Combobox.Item key={asset.symbol}>{asset.symbol}</Combobox.Item>
             ))}
         </Combobox>
       </Box>
@@ -63,48 +60,3 @@ function AddAsset({
 }
 
 export default AddAsset;
-
-{
-  /* <BasicModal
-          isOpen={isModalOpen}
-          title="Select Asset"
-          onClose={() => setModalOpen(false)}
-        >
-          <Box paddingBottom="$10">
-            <Combobox
-              label="Select Assets"
-              openOnFocus
-              styleProps={{
-                width: "350px",
-              }}
-              onInputChange={(value: string) => {
-                const asset = convertAssetList(assetList).find(
-                  (asset) => asset.symbol === value
-                );
-                if (asset) {
-                  setSelectedAsset(asset);
-                  console.log(selectedAsset);
-                } else {
-                  console.log("Asset not found");
-                }
-              }}
-            >
-              {convertAssetList(assetList)
-                .filter(
-                  (asset) =>
-                    !selectedAssetList.assets.some(
-                      (selectedAsset) => selectedAsset.symbol === asset.symbol
-                    )
-                )
-                .map((asset) => (
-                  <Combobox.Item key={asset.symbol} textValue={asset.symbol}>
-                    {asset.symbol}
-                  </Combobox.Item>
-                ))}
-            </Combobox>
-          </Box>
-          <Box display="flex" justifyContent="end">
-            <Button onClick={handleSubmit}>Submit</Button>
-          </Box>
-        </BasicModal> */
-}
