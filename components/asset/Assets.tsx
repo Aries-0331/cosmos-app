@@ -46,7 +46,14 @@ export function Assets() {
     };
 
     fetchAssetList();
-  }, [dataSource, selectedChain, setAssetData, setAssetList]);
+  }, [
+    dataSource,
+    selectedChain,
+    setAssetData,
+    setAssetList,
+    onDeposit,
+    onWithdraw,
+  ]);
 
   return (
     <Box display="flex" flexDirection="column" gap="$6" py="$16">
